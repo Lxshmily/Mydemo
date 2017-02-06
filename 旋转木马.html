@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>3d旋转木马</title>
+	<style>
+		/*初始化  reset*/
+		blockquote,body,button,dd,dl,dt,fieldset,form,h1,h2,h3,h4,h5,h6,hr,input,legend,li,ol,p,pre,td,textarea,th,ul{margin:0;padding:0}
+		body,button,input,select,textarea{font:12px/1.5 "Microsoft YaHei", "微软雅黑", SimSun, "宋体", sans-serif;color: #666;}
+		ol,ul{list-style:none}
+		a{text-decoration:none}
+		fieldset,img{border:0;vertical-align:top;}
+		a,input,button,select,textarea{outline:none;}
+		a,button{cursor:pointer;}
+		body{
+			background: #0c0c0c;
+		}
+		.silder{
+			width: 1200px;
+			margin:10px auto;
+			border:1px solid red;
+		}
+		.warp{
+			height: 500px;
+			position: relative;
+
+		}
+		.warp li{
+			position: absolute;
+			left: 200px;
+		}
+		.warp img{
+			width: 100%;
+			height: auto;
+		}
+		.arrow{
+			z-index: 100;
+			opacity: 0;			
+		}
+		.arrow-prev,
+		.arrow-next{			
+			position: absolute;
+			top: 50%;
+			margin-top:-56px;
+			z-index: 99;
+			width: 76px;
+			height: 112px;
+		}
+		.arrow-prev{
+			background: url(images/prev.png) no-repeat;
+			left: 0;
+		}
+		.arrow-next{
+			background: url(images/next.png) no-repeat;
+			right: 0;
+		}
+		.txt{
+			text-align: center;
+			line-height: 80px;
+			font-size: 48px;
+			color: #fff;
+		}
+	</style>
+</head>
+<body>
+<h1 class="txt">旋转画册</h1>
+	<div class="silder" id="silder_box">
+		<div class="warp" id="warp">
+			<ul>
+				<li><img src="https://img30.360buyimg.com/da/jfs/t3535/218/2269351963/180962/7879cbc9/58490fc5Nb5deb187.jpg" alt=""></li>
+				<li><img src="https://img10.360buyimg.com/da/jfs/t3928/78/351647665/144402/72b05def/584a4b71N4a38b453.jpg" alt=""></li>
+				<li><img src="https://img1.360buyimg.com/da/jfs/t3796/16/2270692073/189245/ff0b6cfc/5848c99dN61b72df5.jpg" alt=""></li>
+				<li><img src="https://img13.360buyimg.com/da/jfs/t3904/210/321467949/207095/fa8c0716/5848d8dfNb2115433.jpg" alt=""></li>
+				<li><img src="https://img20.360buyimg.com/da/jfs/t4045/226/287682132/206019/870274e8/58467f90Nbfcef5d1.jpg" alt=""></li>
+			</ul>
+			<div class="arrow" id="arrow">
+				<div class="arrow-prev"></div>
+				<div class="arrow-next"></div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
+<script>
+	/* ↓ 封装运动函数 ↓*/
+	function animate(obj,json,fn){   //穿入对象(给谁)   ，  json   ，传入一个回调
+		clearInterval(obj.timer);
+		obj.timer=setInterval(function(){
+			var flag=true;  //用来判断何时停止定时器  一定要写到遍历的外边
+			//开始遍历json
+			for(var k in json){  //k 属性   json[k] 值
+				/* 获取当前样式【位置】*/
+ 				var current=0;
+				if(k == "opacity" ){
+					current = Math.round(parseInt(getStyle(obj,k)*100)) || 0;
+					//console.log(getStyle(obj,k));
+				}else{
+					current = parseInt(getStyle(obj,k));
+				}
+				//var current = parseInt(getStyle(obj,k));
+				/* 计算步长*/
+				var step=(json[k]-current)/10;
+				/* 对步长取整*/
+				step=step>0 ? Math.ceil(step) : Math.floor(step);
+
+				/*【透明度已经ok】*/
+				if(k=="opacity"){   //判断是否为opacity属性
+					if("opacity" in obj.style){    //判断对象样式是否支持opacity属性
+						//obj.style.opacity=json[k];
+						obj.style.opacity=(current+step)/100;
+					}else{
+						//obj.style.filter="alpha(opacity="+json[k]+")";   //如果不支持，采用兼容，只要兼容ie678
+						obj.style.filter="alpha(opacity="+(current+step)*10+")"; 
+					}
+				}
+				else if(k=="zIndex")
+				{
+					obj.style.zIndex = json[k];
+				}
+				else
+				{
+					/*开始动画*/
+				obj.style[k]=current+step+"px";
+				}
+				
+
+				if(current!=json[k]){  //只要其中一个不满足条件，就不应该停止定时器，这句一定在遍历里面
+					flag=false;
+				}			
+			}
+			if(flag){   //用于判断停止定时器的条件
+				clearInterval(obj.timer);
+				/* 当动画结束的时候开始回调函数 */
+				if(fn){   //进行判断，fn为真，开始调用
+					fn();   //回调函数一定是等待前面的动画执行完毕后  开始执行
+				}
+			}
+		},30)
+	}
+
+	/*↓ 封装获取css样式函数及兼容性 ↓*/
+	function getStyle(obj,attr){
+		if(obj.currentStyle){
+			return obj.currentStyle[attr];
+		}
+		else{
+			return window.getComputedStyle(obj,null)[attr];
+		}
+	}
+
+
+var silder=document.getElementById('silder_box');
+var warp=document.getElementById("warp");
+var lis=warp.children[0].children;
+var arrow=document.getElementById("arrow");
+var arrows=arrow.children;
+silder.onmouseover=function () {
+	animate(arrow,{opacity:100});
+}
+silder.onmouseout=function () {
+	animate(arrow,{opacity:0});
+}
+
+ //  存储了每个图片的信息
+    var json = [
+        {   //  1
+            width:400,
+            top:20,
+            left:50,
+            opacity:20,
+            z:2
+        },
+        {  // 2
+            width:600,
+            top:70,
+            left:0,
+            opacity:80,
+            z:3
+        },
+        {   // 3
+            width:800,
+            top:100,
+            left:200,
+            opacity:100,
+            z:4
+        },
+        {  // 4
+            width:600,
+            top:70,
+            left:600,
+            opacity:80,
+            z:3
+        },
+        {   //5
+            width:400,
+            top:20,
+            left:750,
+            opacity:20,
+            z:2
+        }
+    ];
+
+    //函数节流   就是当前动画执行时执行下一次操作，否则不执行
+    var jieliu=true;
+	change();   //加载的时候执行一次
+	for(var k in arrows){
+		arrows[k].onclick=function(){
+			if(this.className=="arrow-prev")
+			{
+				//移除第一个  放到json的最后一个
+				if(jieliu==true){
+					change(false);
+					jieliu=false;
+				}
+			}
+			else
+			{
+				//把最后一个json删除 并添加到json的第一个位置
+				if(jieliu==true){
+					change(true); 
+					jieliu=false;
+				}
+			}
+		}
+	}
+
+//alert(lis.length);
+function change(flag){
+	if(flag){
+		//把最后一个json删除 并添加到json的第一个位置
+		json.unshift(json.pop());
+	}
+	else
+	{
+		//移除第一个  放到json的最后一个
+		json.push(json.shift());
+	}
+	/*需要给每一个li添加json里的内容  需要用for来循环*/
+	for(var i=0;i<lis.length;i++){
+		lis[i].index=i;
+		lis[i].onclick=function(){
+			change(true);
+		}
+		animate(lis[i],{
+			width:json[i].width,
+			top:json[i].top,
+			left:json[i].left,
+			opacity:json[i].opacity,
+			zIndex:json[i].z
+		},function(){jieliu=true;})
+	}
+}
+
+</script>

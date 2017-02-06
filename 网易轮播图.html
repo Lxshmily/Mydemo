@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>网易轮播图</title>
+	<style>
+		*{
+			margin:0;padding;
+		}
+		.w-silder{
+			width: 310px;
+			height: 265px;
+			border:1px solid red;
+			margin:50px auto;
+			position: relative;
+			overflow: hidden; 
+			
+		}
+		.silder{
+			width: 310px;
+			height: 220px;
+			background: #ddaa44;
+		}
+		.silder-main{
+			width: 620px;
+			height: 220px;
+			
+		}
+		.silder-main-img{
+			position: absolute;
+			left: 0;
+			top:0;
+		}
+		.silder-ctrl{
+			text-align: center;
+			
+		}
+		.silder-ctrl-con{
+			cursor: pointer;
+			width: 24px;
+			height: 20px;
+			display: inline-block;
+			background: url(http://img1.cache.netease.com/www/v2013/img/icon_v9.png) no-repeat -24px -782px;
+			margin: 0 8px;
+			text-indent: -30em;
+			overflow: hidden;
+		}
+		.silder-ctrl-prov,
+		.silder-ctrl-next{
+			position: absolute;
+			background: url(http://img1.cache.netease.com/www/v2013/img/icon_v9.png) no-repeat;
+			width: 30px;
+			height: 35px;
+			display: inline-block;
+			top:50%;
+			margin-top: -44px;
+			cursor: pointer;
+			opacity: .8;
+		}
+		.silder-ctrl-prov{
+			background-position:6px top;
+			left: 0;
+		}
+		.silder-ctrl-next{
+			background-position: -6px -45px;
+			right: 0;
+		}
+		.current{
+			background: url(http://img1.cache.netease.com/www/v2013/img/icon_v9.png) no-repeat -24px -762px;
+		}
+	</style>
+</head>
+<body>
+	<div class="w-silder" id="js_silder">
+		<div class="silder">
+			<div class="silder-main" id="silder_main_block">
+				<div class="silder-main-img"><a href="#"><img src="http://cms-bucket.nosdn.127.net/0dc0069a6cbc47a3bbb3b4616e396bab20161211110607.jpeg" alt=""></a></div>
+				<div class="silder-main-img"><a href="#"><img src="http://cms-bucket.nosdn.127.net/592b4ba3701d4ffbb3ded8fd6075327920161211080721.jpeg" alt=""></a></div>
+				<div class="silder-main-img"><a href="#"><img src="http://img1.cache.netease.com/ent/2016/12/11/2016121111264113036.jpg" alt=""></a></div>
+				<div class="silder-main-img"><a href="#"><img src="http://cms-bucket.nosdn.127.net/6091e7d439d1426db825e3aa39b9e5ef20161211104306.jpeg" alt=""></a></div>
+				<div class="silder-main-img"><a href="#"><img src="http://cms-bucket.nosdn.127.net/d9afc615d46e4f1b8ca45959ef55ddb920161211095120.jpeg" alt=""></a></div>
+			</div>
+		</div>
+		<div class="silder-ctrl" id="silder_ctrl">
+			<span class="silder-ctrl-prov"></span>
+			
+			<span class="silder-ctrl-next"></span>
+		</div>
+	</div>
+</body>
+</html>
+<script>
+/* ↓ 封装运动函数 ↓*/
+	function animate(obj,json,fn){   //穿入对象(给谁)   ，  json   ，传入一个回调
+		clearInterval(obj.timer);
+		obj.timer=setInterval(function(){
+			var flag=true;  //用来判断何时停止定时器  一定要写到遍历的外边
+			//开始遍历json
+			for(var k in json){  //k 属性   json[k] 值
+				/* 获取当前样式【位置】*/
+ 				var current=0;
+				if(k == "opacity" ){
+					current = Math.round(parseInt(getStyle(obj,k)*100)) || 0;
+					//console.log(getStyle(obj,k));
+				}else{
+					current = parseInt(getStyle(obj,k));
+				}
+				//var current = parseInt(getStyle(obj,k));
+				/* 计算步长*/
+				var step=(json[k]-current)/10;
+				/* 对步长取整*/
+				step=step>0 ? Math.ceil(step) : Math.floor(step);
+
+				/*【透明度已经ok】*/
+				if(k=="opacity"){   //判断是否为opacity属性
+					if("opacity" in obj.style){    //判断对象样式是否支持opacity属性
+						//obj.style.opacity=json[k];
+						obj.style.opacity=(current+step)/100;
+					}else{
+						//obj.style.filter="alpha(opacity="+json[k]+")";   //如果不支持，采用兼容，只要兼容ie678
+						obj.style.filter="alpha(opacity="+(current+step)*10+")"; 
+					}
+				}
+				else if(k=="zIndex")
+				{
+					obj.style.zIndex = json[k];
+				}
+				else
+				{
+					/*开始动画*/
+				obj.style[k]=current+step+"px";
+				}
+				
+
+				if(current!=json[k]){  //只要其中一个不满足条件，就不应该停止定时器，这句一定在遍历里面
+					flag=false;
+				}			
+			}
+			if(flag){   //用于判断停止定时器的条件
+				clearInterval(obj.timer);
+				/* 当动画结束的时候开始回调函数 */
+				if(fn){   //进行判断，fn为真，开始调用
+					fn();   //回调函数一定是等待前面的动画执行完毕后  开始执行
+				}
+			}
+		},30)
+	}
+
+	/*↓ 封装获取css样式函数及兼容性 ↓*/
+	function getStyle(obj,attr){
+		if(obj.currentStyle){
+			return obj.currentStyle[attr];
+		}
+		else{
+			return window.getComputedStyle(obj,null)[attr];
+		}
+	}
+
+
+		window.onload=function(){
+			var js_silder=document.getElementById('js_silder');
+			var silder_main_block=document.getElementById("silder_main_block");
+			var imgs=silder_main_block.children;
+			var silder_ctrl=document.getElementById("silder_ctrl");
+
+			for(var i=0;i<imgs.length;i++){
+				var span=document.createElement("span");
+				span.className="silder-ctrl-con";
+				span.innerHTML=imgs.length-i;
+				silder_ctrl.insertBefore(span,silder_ctrl.children[1]);
+			}
+			var spans=silder_ctrl.children;
+			spans[1].setAttribute("class","silder-ctrl-con current");
+			var scrollWth=js_silder.clientWidth;  //获取大盒子的宽度，也就是下次动画移动的距离
+			console.log(scrollWth);
+			/* 刚开始 按道理  第一张图片 留下  其余的人 到右边去*/
+			for(var i=1;i<imgs.length;i++){    //从1开始就行
+				imgs[i].style.left=scrollWth+"px";   //除了第一个，其他的都到旁边呆着
+			}
+
+			var iNow=0;  //用来控制播放张数
+			//遍历span   添加点击事件   只需一个事件，通过类名来判断事件源
+			for(var k in spans){
+				spans[k].onclick=function(){
+					if(this.className=="silder-ctrl-prov"){
+						//左侧按钮；
+						animate(imgs[iNow],{left:scrollWth});
+						--iNow < 0 ? iNow=imgs.length-1 : iNow;
+						imgs[iNow].style.left = -scrollWth + "px";   //立马执行  快速走到左侧
+						animate(imgs[iNow],{left:0});
+						setSquare();
+					}else if(this.className=="silder-ctrl-next"){
+						//右侧按钮
+						autoPlay();   //跟定时器的方向一毛一样
+
+					}else{
+						// 首先 我们要知道我们点击的是第几张图片   获取当前的索引号
+						// alert(this.innerHTML);
+						var that=this.innerHTML-1;  //获取当前索引号   且是number类型
+						//console.log(typeof that);
+						if(that > iNow){
+							//做法等同右侧按钮
+							animate(imgs[iNow],{left:-scrollWth}); //当前图片慢慢向左走出去；
+							console.log(iNow);
+							imgs[that].style.left = scrollWth + "px";   //目标图片(点击索引号)  快速走到右侧 310位置
+							//animate(imgs[that],{left:0});   //然后从右慢慢走出来
+						}else if(that < iNow){
+							//做法等同左侧按钮
+							animate(imgs[iNow],{left:scrollWth});
+							imgs[that].style.left = -scrollWth + "px";
+							
+						}
+						iNow = that;   //给当前的索引号
+						/* 比如 已经播放到第4张  我点击了第2张  把 2 给iNow下一次播放，应该播放第 3 张*/
+						animate(imgs[iNow],{left:0}); 
+						setSquare();
+					}
+				}
+			}
+
+			//一个可以控制 播放span的函数   当前
+			function setSquare(){
+				//清楚所有的span current   留下 满足需要的那一个
+				for(var i=1;i<spans.length-1;i++){
+					spans[i].className="silder-ctrl-con";
+				}
+				spans[iNow+1].className="silder-ctrl-con current";
+			}
+
+			//定时器开始   其实 定时器相当于右侧按钮
+			var timer=null;
+			timer=setInterval(autoPlay,2000);
+			function autoPlay(){
+				animate(imgs[iNow],{left:-scrollWth});
+				//变成1 先++     ++iNow 先自加 后运算；
+				++iNow > imgs.length -1 ? iNow=0 : iNow;
+				imgs[iNow].style.left = scrollWth + "px";   //立马执行  快速走到右侧
+				animate(imgs[iNow],{left:0});   //下一张走到0的位置，   慢慢走过来
+				setSquare();  //调用下方小方块
+			}
+
+			js_silder.onmouseover=function(){
+				clearInterval(timer);
+			}
+			js_silder.onmouseout=function(){
+				clearInterval(timer);   //要执行定时器，先清除其他定时器
+				timer=setInterval(autoPlay,2000);   //开启定时器
+			}
+		}
+</script>
